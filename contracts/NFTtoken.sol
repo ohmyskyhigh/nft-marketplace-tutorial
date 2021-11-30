@@ -12,7 +12,7 @@ contract NFTtoken is ERC721URIStorage {
     Counters.Counter private _tokenIds;
     address _contractAddress;
 
-    constructor(address marketContractAddress) ERC721("Metaverse Tokens", "METT"){
+    constructor(address marketContractAddress) ERC721("Metaverse Tokens", "METT") {
         _contractAddress = marketContractAddress;
     }
 
