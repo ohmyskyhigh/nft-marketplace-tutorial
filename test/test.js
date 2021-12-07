@@ -15,17 +15,19 @@ describe("NFTMarketPlace Unit Tests", function () {
 			market = await ethers.getContractFactory("NFTMarketPlace");
 			// deploy contract
 			market = await market.deploy();
+      await market.deployed();
 			// get market contract address
 			marketAddress = await market.address;
 			console.log(marketAddress);
 			// deploy NFT contract and set marketAddress as admin
 			NFT = await NFT.deploy(marketAddress);
+      await NFT.deployed();
 			nftAddress = await NFT.address;
 		} catch (e) {
 			console.log(e);
 		}
 		await NFT.mintToken("https://gateway.pinata.cloud/ipfs/QmRq4QYd1BReTjRQDnMBqdKLRa2CWWcAp1WN4dWFqdmryb");
-		await NFT.mintToken("https://gateway.pinata.cloud/ipfs/QmRUt1FCy7t9vxzgCvu7iUaiQA2wJfsED2zcZUdDKetXzh")
+		await NFT.mintToken("https://gateway.pinata.cloud/ipfs/QmRUt1FCy7t9vxzgCvu7iUaiQA2wJfsED2zcZUdDKetXzh");
 		//set auction price
 		const auctionPrice = ethers.utils.parseUnits('0.1', 'ether');
 		// list friend
