@@ -7,8 +7,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import "hardhat/console.sol";
 
-contract NFTMarketPlace is ReentrancyGuard {
-
+contract NFTMarketPlaceabc is ReentrancyGuard {
     /**
         NFTMarketPlace合约 功能：
             1. 用户登陆注册
@@ -34,29 +33,24 @@ contract NFTMarketPlace is ReentrancyGuard {
         owner = payable(msg.sender);
     }
 
-    /**
-        inventory item style
-     */
-    struct MarketItem {
-        uint256 itemId; // item id
-        address nftContract; // nft contract address
-        uint256 tokenId; // NFT token ID
-        address payable seller; // contract emitter
-        address payable owner; // Onwer address
-        uint256 price; // listing price
-        bool sold; // is transfered
+     struct MarketItem {
+        uint256 itemId;
+        address nftContract;
+        uint256 tokenId;
+        address payable seller;
+        address payable owner;
+        uint256 price;
+        bool sold;
     }
 
-    // mapping function to map uint to MarketItem
-    mapping(uint256 => MarketItem) private id2MarketItem;
+    mapping(uint256 => MarketItem) private idToMarketItem;
 
-    // build event
-    event ItemCreateEvent(
+    event MarketItemCreated(
         uint256 indexed itemId,
         address indexed nftContract,
         uint256 indexed tokenId,
-        address payable seller,
-        address payable owner,
+        address seller,
+        address owner,
         uint256 price,
         bool sold
     );
@@ -76,21 +70,22 @@ contract NFTMarketPlace is ReentrancyGuard {
     ) public payable nonReentrant {
         require(price > 0, "Price must be at least 1 wei");
 
-        _itemIds.increment();
-        // setting itemID
-        uint256 itemId = _itemIds.current();
 
-        // append item state
-        id2MarketItem[itemId] = MarketItem(
+        _itemIds.increment();
+        uint256 itemId = _itemIds.current();
+        console.log("itemId", itemId);
+        console.log("nftcontract", nftContract);
+        console.log("seller", msg.sender);
+        idToMarketItem[itemId] = MarketItem(
             itemId,
             nftContract,
             tokenId,
             payable(msg.sender),
             payable(address(0)),
             price,
-            false
+            true
         );
-
+        /*
         IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
 
         emit ItemCreateEvent(
@@ -102,64 +97,69 @@ contract NFTMarketPlace is ReentrancyGuard {
             price, 
             false
         );
+        */
     }
 
     /**
         listing marketplace item
         transfer ownership from one to another, and transfer money from seller to buyer
     */
-    function marketplaceListing(address nftContract, uint itemId) public payable nonReentrant{
-        //getListing price
-        uint price = id2MarketItem[itemId].price;
-        //send money from buyer to contract
-        require(msg.value == price);
-        uint tokenId = id2MarketItem[itemId].tokenId;
-        
-        // send cargo
+    function createMarketSale(address nftContract, uint256 itemId)
+        public
+        payable
+        nonReentrant
+    {
+        uint256 price = idToMarketItem[itemId].price;
+        uint256 tokenId = idToMarketItem[itemId].tokenId;
+        require(
+            msg.value == price,
+            "Please submit the asking price in order to complete the purchase"
+        );
+
+        idToMarketItem[itemId].seller.transfer(msg.value);
         IERC721(nftContract).transferFrom(address(this), msg.sender, tokenId);
-        // send money to the seller
-        id2MarketItem[itemId].seller.transfer(msg.value);
-
-        // register item to new address
-        id2MarketItem[itemId].owner = payable(msg.sender);
-        id2MarketItem[itemId].sold = true;
+        idToMarketItem[itemId].owner = payable(msg.sender);
+        idToMarketItem[itemId].sold = true;
         _itemsSold.increment();
-
-        // send listing fee to the owner of the contract in the end
         payable(owner).transfer(listingFee);
     }
 
     // return all unsold listing items on listing
-    function fetchMarketItems() public view returns(MarketItem[] memory) {
-        uint itemsLength = _itemIds.current() - _itemsSold.current();
+    function fetchMarketItems() public view returns (MarketItem[] memory) {
+        uint256 itemsLength = _itemIds.current() - _itemsSold.current();
         MarketItem[] memory unsoldItems = new MarketItem[](itemsLength);
 
-        uint unsoldIdx = 0;
-        for (uint i = 0; i<_itemsSold.current(); i++){
-            if (id2MarketItem[i+1].sold == false){
-                MarketItem memory item = id2MarketItem[i+1];
-                unsoldIdx += 1;
+        uint256 unsoldIdx = 0;
+        for (uint256 i = 0; i < _itemIds.current(); i++) {
+            uint256 currentId = i + 1;
+            if (idToMarketItem[currentId].owner == address(0)) {
+                MarketItem memory item = idToMarketItem[currentId];
                 unsoldItems[unsoldIdx] = item;
+                unsoldIdx += 1;
             }
         }
         return unsoldItems;
     }
 
     // retrieve users NFT
-    function fetchMyNFT(address account) public view returns(MarketItem[] memory) {
-        uint myNftLength = 0;
-        for (uint i=0; i<_itemIds.current(); i++){
-            if (id2MarketItem[i+1].owner == payable(account)) {
-                myNftLength+=1;
+    function fetchMyNFT(address account)
+        public
+        view
+        returns (MarketItem[] memory)
+    {
+        uint256 myNftLength = 0;
+        for (uint256 i = 0; i < _itemIds.current(); i++) {
+            if (idToMarketItem[i + 1].owner == payable(account)) {
+                myNftLength += 1;
             }
         }
         MarketItem[] memory myNfts = new MarketItem[](myNftLength);
-        
-        uint myNftIdx = 0;
-        for (uint i=0; i<_itemIds.current(); i++){
-            if(id2MarketItem[i+1].owner == payable(account)) {
+
+        uint256 myNftIdx = 0;
+        for (uint256 i = 0; i < _itemIds.current(); i++) {
+            if (idToMarketItem[i + 1].owner == payable(account)) {
                 myNftIdx += 1;
-                myNfts[myNftIdx] = id2MarketItem[i+1];
+                myNfts[myNftIdx] = idToMarketItem[i + 1];
             }
         }
         return myNfts;

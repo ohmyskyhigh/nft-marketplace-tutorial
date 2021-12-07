@@ -61,7 +61,9 @@ contract NFTMarket is ReentrancyGuard {
 
         _itemIds.increment();
         uint256 itemId = _itemIds.current();
-
+        console.log("itemId", itemId);
+        console.log("nftcontract", nftContract);
+        console.log("seller", msg.sender);
         idToMarketItem[itemId] = MarketItem(
             itemId,
             nftContract,
@@ -69,11 +71,10 @@ contract NFTMarket is ReentrancyGuard {
             payable(msg.sender),
             payable(address(0)),
             price,
-            false
+            true
         );
-
-        IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
-
+        //IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
+        /*
         emit MarketItemCreated(
             itemId,
             nftContract,
@@ -83,6 +84,7 @@ contract NFTMarket is ReentrancyGuard {
             price,
             false
         );
+        */
     }
 
     /* Creates the sale of a marketplace item */

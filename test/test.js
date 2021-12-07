@@ -1,47 +1,50 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+/* test/sample-test.js */
+describe("NFT marketplace self made", function() {
+  it("Should create and make market sales", async function() {
+    /* deploy the marketplace */
+    const Market = await ethers.getContractFactory("NFTMarketPlaceabc")
+    const market = await Market.deploy()
+    await market.deployed()
+    const marketAddress = market.address
 
-describe("NFTMarketPlace Unit Tests", function () {
-	var NFT;
-	var market;
-	var marketAddress;
-	var nftAddress;
-	var listingPrice;
+    /* deploy the NFT contract */
+    const NFT = await ethers.getContractFactory("NFTtoken")
+    const nft = await NFT.deploy(marketAddress)
+    await nft.deployed()
+    const nftContractAddress = nft.address
 
-	it("should listed in the marketplace", async function () {
-		try {
-			// setup contract
-			NFT = await ethers.getContractFactory("NFTtoken");
-			market = await ethers.getContractFactory("NFTMarketPlace");
-			// deploy contract
-			market = await market.deploy();
-      await market.deployed();
-			// get market contract address
-			marketAddress = await market.address;
-			console.log(marketAddress);
-			// deploy NFT contract and set marketAddress as admin
-			NFT = await NFT.deploy(marketAddress);
-      await NFT.deployed();
-			nftAddress = await NFT.address;
-		} catch (e) {
-			console.log(e);
-		}
-		await NFT.mintToken("https://gateway.pinata.cloud/ipfs/QmRq4QYd1BReTjRQDnMBqdKLRa2CWWcAp1WN4dWFqdmryb");
-		await NFT.mintToken("https://gateway.pinata.cloud/ipfs/QmRUt1FCy7t9vxzgCvu7iUaiQA2wJfsED2zcZUdDKetXzh");
-		//set auction price
-		const auctionPrice = ethers.utils.parseUnits('0.1', 'ether');
-		// list friend
-		console.log(nftAddress);
-		await market.createMarketItem(nftAddress, 1, auctionPrice);
-		// list qiqi
-		await market.createMarketItem(nftAddress, 1, auctionPrice);
+    const auctionPrice = ethers.utils.parseUnits('1', 'ether');
 
-		const [_, buyerAddress] = await ethers.getSigners();
-		// create sale
-		await market.connect(buyerAddress).marketplaceListing(nftContractAddress, 1, { value: auctionPrice });
+    /* create two tokens */
+    await nft.mintToken("https://gateway.pinata.cloud/ipfs/QmRq4QYd1BReTjRQDnMBqdKLRa2CWWcAp1WN4dWFqdmryb")
+    await nft.mintToken("https://gateway.pinata.cloud/ipfs/QmRUt1FCy7t9vxzgCvu7iUaiQA2wJfsED2zcZUdDKetXzh")
 
-		// get unsold item in market place
-		items = await market.fetchMarketItems();
-		console.log(items);
-	})
-});
+    /* put both tokens for sale */
+    await market.createMarketItem(nftContractAddress, 1, auctionPrice);
+    await market.createMarketItem(nftContractAddress, 2, auctionPrice);
+
+    const [_, buyerAddress] = await ethers.getSigners()
+    
+    /* execute sale of token to another user */
+    //await market.connect(buyerAddress).createMarketSale(nftContractAddress, 1, { value: auctionPrice})
+
+    /* query for and return the unsold items */
+    
+    items = await market.fetchMarketItems();
+    console.log(items);
+    /*
+    items = await Promise.all(items.map(async i => {
+      const tokenUri = await nft.tokenURI(i.tokenId)
+      let item = {
+        price: i.price.toString(),
+        tokenId: i.tokenId.toString(),
+        seller: i.seller,
+        owner: i.owner,
+        tokenUri
+      }
+      return item
+    }))
+    console.log('items: ', items)
+    */
+  })
+})
