@@ -29,7 +29,7 @@ describe("NFTMarket", function() {
       const [_, buyerAddress] = await ethers.getSigners()
   
       /* execute sale of token to another user */
-      //await market.connect(buyerAddress).createMarketSale(nftContractAddress, 1, { value: auctionPrice})
+      await market.connect(buyerAddress).createMarketSale(nftContractAddress, 1, { value: auctionPrice})
   
       /* query for and return the unsold items */
       items = await market.fetchMarketItems()

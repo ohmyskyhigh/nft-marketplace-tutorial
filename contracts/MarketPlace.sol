@@ -23,17 +23,17 @@ contract NFTMarketPlaceabc is ReentrancyGuard {
     Counters.Counter private _itemsSold;
 
     // define a payable user
-    address payable owner;
+    address owner;
     // base price
     uint256 listingFee = 0.025 ether;
 
     // the messenger is the senders
     constructor() {
         // creator address
-        owner = payable(msg.sender);
+        owner = msg.sender;
     }
 
-     struct MarketItem {
+    struct MarketItem {
         uint256 itemId;
         address nftContract;
         uint256 tokenId;
@@ -69,8 +69,7 @@ contract NFTMarketPlaceabc is ReentrancyGuard {
         uint256 price
     ) public payable nonReentrant {
         require(price > 0, "Price must be at least 1 wei");
-
-
+        require(msg.value == listingFee, "must provide listing fee");
         _itemIds.increment();
         uint256 itemId = _itemIds.current();
         console.log("itemId", itemId);
@@ -83,21 +82,20 @@ contract NFTMarketPlaceabc is ReentrancyGuard {
             payable(msg.sender),
             payable(address(0)),
             price,
-            true
-        );
-        /*
-        IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
-
-        emit ItemCreateEvent(
-            itemId, 
-            nftContract, 
-            tokenId, 
-            payable(msg.sender), 
-            payable(address(0)), 
-            price, 
             false
         );
-        */
+
+        IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
+
+        emit MarketItemCreated(
+            itemId,
+            nftContract,
+            tokenId,
+            payable(msg.sender),
+            payable(address(0)),
+            price,
+            false
+        );
     }
 
     /**
@@ -115,13 +113,23 @@ contract NFTMarketPlaceabc is ReentrancyGuard {
             msg.value == price,
             "Please submit the asking price in order to complete the purchase"
         );
-
+        console.log("buyer", msg.sender);
+        console.log("itemId", itemId);
+        console.log("contract", nftContract);
+        console.log("purchase price", msg.value);
+        console.log("sale seller", idToMarketItem[itemId].seller);
         idToMarketItem[itemId].seller.transfer(msg.value);
+        console.log("money transfered");
         IERC721(nftContract).transferFrom(address(this), msg.sender, tokenId);
+        console.log("NFT transfered");
+        console.log("contract owner", owner);
+        console.log("listing fee", listingFee);
+        payable(owner).transfer(listingFee);
+        console.log("listing fee transfered");
         idToMarketItem[itemId].owner = payable(msg.sender);
         idToMarketItem[itemId].sold = true;
+        console.log("update struct");
         _itemsSold.increment();
-        payable(owner).transfer(listingFee);
     }
 
     // return all unsold listing items on listing
@@ -132,7 +140,7 @@ contract NFTMarketPlaceabc is ReentrancyGuard {
         uint256 unsoldIdx = 0;
         for (uint256 i = 0; i < _itemIds.current(); i++) {
             uint256 currentId = i + 1;
-            if (idToMarketItem[currentId].owner == address(0)) {
+            if (idToMarketItem[currentId].sold == false) {
                 MarketItem memory item = idToMarketItem[currentId];
                 unsoldItems[unsoldIdx] = item;
                 unsoldIdx += 1;

@@ -73,8 +73,8 @@ contract NFTMarket is ReentrancyGuard {
             price,
             true
         );
-        //IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
-        /*
+        IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
+        
         emit MarketItemCreated(
             itemId,
             nftContract,
@@ -84,7 +84,7 @@ contract NFTMarket is ReentrancyGuard {
             price,
             false
         );
-        */
+        
     }
 
     /* Creates the sale of a marketplace item */
